@@ -2,7 +2,7 @@ module.exports = {
   apps: [
     {
       name: 'backend',
-      script: 'ts-node bin/www.ts',
+      script: './node_modules/.bin/ts-node bin/www.ts',
       autorestart: true,
       watch: true,
       max_memory_restart: '1G',

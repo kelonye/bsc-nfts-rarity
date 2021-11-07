@@ -1,7 +1,7 @@
 run: node_modules
 	@yarn start
 
-lint:
+build:
 	@yarn $@
 
 node_modules:
@@ -10,4 +10,4 @@ node_modules:
 
 .PHONY: \
 	run \
-	lint
+	build

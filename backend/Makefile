@@ -7,7 +7,7 @@ prd:
 	@NODE_PATH=./src:$NODE_PATH NODE_ENV=production ./node_modules/.bin/pm2 start
 
 rate:
-	@NODE_PATH=./src:$NODE_PATH slug=$(o) ts-node bin/load-rate-nfts.ts
+	@NODE_PATH=./src:$NODE_PATH slug=$(o) ./node_modules/.bin/ts-node bin/load-rate-nfts.ts
 
 .PHONY: \
 	www \
