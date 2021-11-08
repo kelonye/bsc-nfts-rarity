@@ -7,11 +7,29 @@ import { getRedisNFTKey } from '../nfts/utils';
 
 async function main(slug: string) {
   const { count } = COLLECTIONS[slug];
-  const jobs: any = [];
-  for (let i = 1; i <= count; i++) {
-    jobs.push(fetchNFT(slug, i));
-  }
-  return await Promise.all(jobs);
+
+  return new Promise((resolve, reject) => {
+    const batch = new Batch();
+
+    batch.concurrency(100);
+
+    for (let i = 1; i <= count; i++) {
+      ((j: number) => {
+        batch.push(async (done) => {
+          try {
+            done(null, await fetchNFT(slug, j));
+          } catch (err) {
+            done(err);
+          }
+        });
+      })(i);
+    }
+
+    batch.end(async (err) => {
+      if (err) return reject(err);
+      resolve(true);
+    });
+  });
 }
 
 async function fetchNFT(slug: string, i: number) {

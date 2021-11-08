@@ -1,5 +1,4 @@
 import orderBy from 'lodash/orderBy';
-import Batch from 'batch';
 
 import { COLLECTIONS } from '../config';
 import * as redis from '../utils/redis';
@@ -38,49 +37,31 @@ type NFT = {
 async function main(slug: string) {
   const { count } = COLLECTIONS[slug];
 
-  return new Promise((resolve, reject) => {
-    const batch = new Batch();
+  const jobs: any = [];
+  for (let i = 1; i <= count; i++) {
+    jobs.push(redis.exec('get', [getRedisNFTKey(slug, i)]));
+  }
+  const data: string[] = await Promise.all(jobs);
 
-    batch.concurrency(100);
-
-    for (let i = 1; i <= count; i++) {
-      ((j: number) => {
-        batch.push(async (done) => {
-          try {
-            done(null, await redis.exec('get', [getRedisNFTKey(slug, j)]));
-          } catch (err) {
-            done(err);
-          }
-        });
-      })(i);
-    }
-
-    batch.end(async (err, data) => {
-      if (err) return reject(err);
-
-      const nfts = data
-        .map((s, id) => {
-          if (s) {
-            const nft = JSON.parse(s);
-            if (nft) {
-              nft.id ??= id;
-              return nft;
-            }
-          }
-          return null;
-        })
-        .filter((n) => !!n?.attributes);
-
-      const sortedNFTs = await rateNFTs(nfts);
-
-      for (let k = 0; k < sortedNFTs.length; k++) {
-        const nft = sortedNFTs[k];
-        await redis.exec('zadd', [getRedisSortedNFTsKey(slug), k + 1, nft.id]);
+  const nfts = data
+    .map((s, id) => {
+      if (s) {
+        const nft = JSON.parse(s);
+        if (nft) {
+          nft.id ??= id;
+          return nft;
+        }
       }
+      return null;
+    })
+    .filter((n) => !!n?.attributes);
 
-      resolve(true);
-    });
-  });
+  const sortedNFTs = await rateNFTs(nfts);
+
+  for (let k = 0; k < sortedNFTs.length; k++) {
+    const nft = sortedNFTs[k];
+    await redis.exec('zadd', [getRedisSortedNFTsKey(slug), k + 1, nft.id]);
+  }
 }
 
 async function rateNFTs(punks: RawNFT[]) {
