@@ -1,3 +1,4 @@
+import { clone } from 'lodash';
 import {
   FC,
   ReactNode,
@@ -17,7 +18,7 @@ export type Collection = {
 };
 
 export type NFT = {
-  id: number;
+  index: number;
   image: string;
 };
 
@@ -32,6 +33,9 @@ const CollectionsContext = createContext<{
   page: number;
   activeCollectionSlug: string | null;
   activeCollection: Collection | null;
+  addFilter: (t: string, v: string) => void;
+  removeFilter: (t: string, v: string) => void;
+  filters: Record<string, string[]>;
 } | null>(null);
 
 export const CollectionsProvider: FC<{ children: ReactNode }> = ({
@@ -43,11 +47,38 @@ export const CollectionsProvider: FC<{ children: ReactNode }> = ({
   const [nfts, setNFTs] = useState<NFT[]>([]);
   const [pages, setPages] = useState<number>(0);
   const [page, setPage] = useState<number>(1);
+  const [filters, setFilters] = useState<Record<string, string[]>>({});
 
   const activeCollection = useMemo(
     () => collections.find((c) => c.slug === activeCollectionSlug) ?? null,
     [collections, activeCollectionSlug]
   );
+
+  const addFilter = (trait: string, value: string) => {
+    setFilters((f) => {
+      const filters = clone(f);
+      let values = filters[trait] ?? [];
+      const idx = values.indexOf(value);
+      if (!~idx) {
+        values.push(value);
+      }
+      filters[trait] = values;
+      return filters;
+    });
+  };
+
+  const removeFilter = (trait: string, value: string) => {
+    setFilters((f) => {
+      const filters = clone(f);
+      let values = filters[trait] ?? [];
+      const idx = values.indexOf(value);
+      if (~idx) {
+        values.splice(idx, 1);
+      }
+      filters[trait] = values;
+      return filters;
+    });
+  };
 
   useEffect(() => {
     const load = async () => {
@@ -63,13 +94,17 @@ export const CollectionsProvider: FC<{ children: ReactNode }> = ({
 
     const load = async () => {
       const { nfts, pages } = await request.api(
-        `/collections/${activeCollectionSlug}/${page}`
+        `/collections/${activeCollectionSlug}`,
+        {
+          page,
+          filters,
+        }
       );
       setNFTs(nfts);
       setPages(pages);
     };
     load();
-  }, [activeCollectionSlug, page]);
+  }, [activeCollectionSlug, page, filters]);
 
   return (
     <CollectionsContext.Provider
@@ -84,6 +119,9 @@ export const CollectionsProvider: FC<{ children: ReactNode }> = ({
         setPage,
         pages,
         page,
+        filters,
+        addFilter,
+        removeFilter,
       }}
     >
       {children}

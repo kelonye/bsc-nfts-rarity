@@ -8,6 +8,7 @@
     "dotenv": "^8.2.0",
     "express": "^4.17.1",
     "express-rate-limit": "^5.1.1",
+    "mongodb": "^4.1.4",
     "morgan": "^1.10.0",
     "nanoid": "^3.1.20",
     "node-fetch": "^2.6.0",
@@ -15,8 +16,8 @@
     "redis": "^3.0.2"
   },
   "devDependencies": {
-    "nodemon": "^2.0.6",
     "@types/node-fetch": "^2.5.7",
+    "nodemon": "^2.0.6",
     "ts-node": "^9.1.1",
     "tsconfig-paths": "^3.11.0",
     "typescript": "^4.1.3"

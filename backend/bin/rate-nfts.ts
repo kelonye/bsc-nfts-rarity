@@ -1,4 +1,4 @@
-import load from '../src/nfts/load';
+import '../src/utils/dotenv';
 import rate from '../src/nfts/rate';
 import { COLLECTIONS } from '../src/config';
 
@@ -13,6 +13,5 @@ main().then(
 async function main() {
   const slug = process.env.slug!;
   if (!slug || !COLLECTIONS[slug]) throw new Error('slug required');
-  await load(slug);
   await rate(slug);
 }

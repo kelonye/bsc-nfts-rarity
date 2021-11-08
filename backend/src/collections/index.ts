@@ -4,15 +4,17 @@ import * as db from './db';
 
 const app = express.Router();
 
-app.get('/:slug/:page', async (req, res, next) => {
+app.post('/:slug', async (req, res, next) => {
   try {
-    res.json(await db.one(req.params.slug, req.params.page));
+    res.json(
+      await db.one(req.params.slug, req.body.page ?? 1, req.body.filters ?? {})
+    );
   } catch (e) {
     next(e);
   }
 });
 
-app.get('/', async (req, res, next) => {
+app.post('/', async (req, res, next) => {
   try {
     return res.json(await db.all());
   } catch (e) {

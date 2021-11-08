@@ -22,3 +22,5 @@ export const COLLECTIONS = {
 };
 
 export const PAGE = 9 * 5;
+
+export const MONGO_URL = process.env.MONGO_URL!;

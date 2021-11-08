@@ -1,54 +1,41 @@
-import * as redis from '../utils/redis';
 import error from '../utils/error';
 import { PAGE, COLLECTIONS } from '../config';
-import {
-  getRedisNFTKey,
-  getRedisSortedNFTsKey,
-  getRedisTraitsKey,
-} from '../nfts/utils';
+import * as db from '../nfts/db';
 
 export async function all() {
-  const traits = await Promise.all(
-    Object.keys(COLLECTIONS).map((slug) =>
-      redis.exec('get', [getRedisTraitsKey(slug)])
-    )
-  );
-  return Object.entries(COLLECTIONS).map(([slug, c], i) => ({
-    ...c,
-    slug,
-    traits: JSON.parse(traits[i]),
-  }));
+  return (await db.collection()).find().sort({ name: -1 }).toArray();
 }
 
-export async function one(slug: string, page: number) {
+export async function one(
+  slug: string,
+  page: number,
+  filters: Record<string, string[]>
+) {
   // console.log('slug', slug);
   if (!(slug in COLLECTIONS)) throw error(404);
 
-  const { count } = COLLECTIONS[slug];
+  const traitTypes: string[] = [];
+  let values: string[] = [];
+  Object.entries(filters).forEach(([filter, v]) => {
+    traitTypes.push(filter);
+    values = values.concat(v);
+  });
 
+  const query = !(traitTypes.length && values.length)
+    ? {}
+    : {
+        'attributes.traitType': { $in: traitTypes },
+        'attributes.value': { $in: values },
+      };
+
+  const { count } = COLLECTIONS[slug];
   const min = (page - 1) * PAGE;
-  const max = min + PAGE - 1;
-  // console.log('min, max = %s, %s', min, max);
-  const ids: string[] = await redis.exec('zrange', [
-    getRedisSortedNFTsKey(slug),
-    min,
-    max,
-  ]);
-  // console.log(ids);
-  const jobs: any[] = ids.map((key) =>
-    redis.exec('get', [getRedisNFTKey(slug, parseInt(key))])
-  );
-  const data: string[] = await Promise.all(jobs);
-  const nfts = data
-    .map((s, i) => {
-      if (s) {
-        const nft = JSON.parse(s);
-        nft.id = ids[i];
-        return nft;
-      }
-      return null;
-    })
-    .filter((n) => n && n.attributes);
+
+  const nfts = await (await (await db.nft(slug)).find(query))
+    .sort({ rarityScore: -1 })
+    .skip(min)
+    .limit(PAGE)
+    .toArray();
 
   return {
     nfts,

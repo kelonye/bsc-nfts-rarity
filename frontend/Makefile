@@ -1,12 +1,11 @@
 run: node_modules
-	@yarn start
+	@npm run start
 
 build:
-	@yarn $@
+	@npm run $@
 
 node_modules:
-	@yarn
-
+	@npm run
 
 .PHONY: \
 	run \

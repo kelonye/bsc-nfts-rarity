@@ -20,11 +20,11 @@ https://photos.app.goo.gl/xxx -->
 
 - Node.JS 12+
 - Git
-- Redis
+- MongoDB 3+
 
 #### Running the app
 
-- Start redis server on default port
+- Start mongodb server on default port
 - On seperate tabs, `cd` into `backend` and `frontend` and:
   - Run `yarn` to install node packages.
   - Copy `.env.sample` or `.env.local.sample` to `.env` and configure appropriately.

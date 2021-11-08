@@ -1,107 +1,73 @@
-import orderBy from 'lodash/orderBy';
-
+import Batch from 'batch';
 import { COLLECTIONS } from '../config';
-import * as redis from '../utils/redis';
-import {
-  getRedisNFTKey,
-  getRedisSortedNFTsKey,
-  getRedisTraitsKey,
-} from '../nfts/utils';
-
-type RawNFT = {
-  id: number;
-  image: string;
-  attributes: {
-    trait_type?: string;
-    value?: string;
-  }[];
-};
-
-type NFT = {
-  id: number;
-  image: string;
-  attributes: {
-    traitType: string;
-    value: string;
-    percentile: number;
-    rarityScore: number;
-    count: number;
-  }[];
-  missingTraits: {
-    traitType: string;
-    rarityScore: number;
-    count: number;
-    percentile: number;
-  }[];
-  traitCount: number;
-  percentile: number;
-  rarityScore: number;
-};
+import * as db from './db';
 
 async function main(slug: string) {
-  const { count } = COLLECTIONS[slug];
+  return new Promise(async (resolve, reject) => {
+    const { name, count } = COLLECTIONS[slug];
+    const c = await db.nft(slug);
 
-  const jobs: any = [];
-  for (let i = 1; i <= count; i++) {
-    jobs.push(redis.exec('get', [getRedisNFTKey(slug, i)]));
-  }
-  const data: string[] = await Promise.all(jobs);
+    const nfts: db.NFT[] = ((await c.find({}).toArray()) ?? []) as db.NFT[];
 
-  const nfts = data
-    .map((s, id) => {
-      if (s) {
-        const nft = JSON.parse(s);
-        if (nft) {
-          nft.id ??= id;
-          return nft;
+    const { nfts: sortedNFTs, allTraits } = await rateNFTs(nfts);
+
+    const batch = new Batch();
+
+    batch.concurrency(1000);
+
+    for (const nft of sortedNFTs) {
+      batch.push(async (done) => {
+        try {
+          console.log('saving %s(%s)', slug, nft.index);
+          const {
+            traitCount,
+            percentile,
+            attributes,
+            missingTraits,
+            rarityScore,
+          } = nft;
+          await c.updateOne(
+            { index: nft.index },
+            {
+              $set: {
+                traitCount,
+                percentile,
+                attributes,
+                missingTraits,
+                rarityScore,
+              },
+            }
+          );
+          done();
+        } catch (err) {
+          done(err);
         }
-      }
-      return null;
-    })
-    .filter((n) => !!n?.attributes);
+      });
+    }
 
-  const { sortedNFTs, allTraits } = await rateNFTs(nfts);
+    batch.end(async (err) => {
+      if (err) return reject(err);
 
-  for (let k = 0; k < sortedNFTs.length; k++) {
-    const nft = sortedNFTs[k];
-    await redis.exec('zadd', [getRedisSortedNFTsKey(slug), k + 1, nft.id]);
-  }
+      await (
+        await db.collection()
+      ).updateOne(
+        { slug },
+        { $set: { slug, count, name, traits: allTraits } },
+        { upsert: true }
+      );
 
-  await redis.exec('set', [getRedisTraitsKey(slug), JSON.stringify(allTraits)]);
+      resolve(true);
+    });
+  });
 }
 
-async function rateNFTs(punks: RawNFT[]) {
+async function rateNFTs(nfts: db.NFT[]) {
   const allTraits = {};
   const attrCount = {};
 
-  // normalize
-  let sortedNFTs: NFT[] = punks.map((nft) => {
-    const { id, image } = nft;
-
-    const attributes = nft.attributes
-      .filter((attr) => attr.trait_type && attr.value)
-      .map((attr) => ({
-        traitType: attr.trait_type!,
-        value: attr.value!,
-        percentile: 0,
-        count: 0,
-        rarityScore: 0,
-      }));
-
-    return {
-      id,
-      image,
-      attributes,
-      missingTraits: [],
-      traitCount: 0,
-      percentile: 0,
-      rarityScore: 0,
-    };
-  });
-
   // aggregate all attrs
   let totalTraits = 0;
-  sortedNFTs.forEach(({ attributes }) => {
+  nfts.forEach(({ attributes }) => {
     if (attrCount[attributes.length]) {
       attrCount[attributes.length] = attrCount[attributes.length] + 1;
     } else {
@@ -127,7 +93,7 @@ async function rateNFTs(punks: RawNFT[]) {
   });
 
   //
-  sortedNFTs.forEach((nft) => {
+  nfts.forEach((nft) => {
     let missingTraits = Object.keys(allTraits);
 
     nft.attributes.forEach((attribute) => {
@@ -142,6 +108,7 @@ async function rateNFTs(punks: RawNFT[]) {
     });
 
     // set missing traits
+    nft.missingTraits = [];
     missingTraits.forEach((missingTrait) => {
       const rarityCount = allTraits[missingTrait].sum;
       const missingCount = totalTraits - rarityCount;
@@ -170,9 +137,7 @@ async function rateNFTs(punks: RawNFT[]) {
     nft.rarityScore += nft.rarityScore;
   });
 
-  sortedNFTs = orderBy(sortedNFTs, 'rarityScore', 'desc');
-
-  return { sortedNFTs, allTraits };
+  return { nfts, allTraits };
 }
 
 export default main;

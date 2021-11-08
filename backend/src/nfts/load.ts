@@ -2,8 +2,7 @@ import fetch from 'node-fetch';
 import Batch from 'batch';
 
 import { COLLECTIONS } from '../config';
-import * as redis from '../utils/redis';
-import { getRedisNFTKey } from '../nfts/utils';
+import * as db from './db';
 
 async function main(slug: string) {
   const { count } = COLLECTIONS[slug];
@@ -32,16 +31,41 @@ async function main(slug: string) {
   });
 }
 
-async function fetchNFT(slug: string, i: number) {
+async function fetchNFT(slug: string, index: number) {
   const { url } = COLLECTIONS[slug];
+  const c = await db.nft(slug);
 
-  const key = getRedisNFTKey(slug, i);
-  if (await redis.exec('get', [key])) return console.log('skipping %s', i);
+  if (await c.findOne({ index }))
+    return console.log('skipping %s(%s)', slug, index);
 
-  console.log('loading %s', i);
+  console.log('loading %s(%s)', slug, index);
   try {
-    const nft = await request(url(i));
-    await redis.exec('set', [key, JSON.stringify(nft)]);
+    const nft: db.RawNFT = await request(url(index));
+    if (!nft?.attributes) return;
+    const attributes = nft.attributes
+      .filter((attribute) => attribute.trait_type && attribute.value)
+      .map((attribute) => ({
+        traitType: attribute.trait_type!,
+        value: attribute.value!,
+        percentile: 0,
+        count: 0,
+        rarityScore: 0,
+        missingTraits: [],
+      }));
+    if (!attributes) return;
+    await c.updateOne(
+      { index },
+      {
+        $set: {
+          index,
+          image: nft.image,
+          attributes,
+        },
+      },
+      {
+        upsert: true,
+      }
+    );
   } catch (e) {
     console.warn(e);
   }
