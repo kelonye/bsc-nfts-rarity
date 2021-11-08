@@ -10,17 +10,17 @@ NFT collection analytics and appraisals on BSC.
 
 Project link: https://bsc-rarity.com
 
-<!-- ### Video demo
+### Video demo
 
-https://photos.app.goo.gl/xxx -->
+https://youtu.be/JTnJ_4gszFA
 
 ### Getting started
 
 #### Prerequisites
 
-- Node.JS 12+
+- Node.JS 14+
 - Git
-- MongoDB 3+
+- MongoDB 5+
 
 #### Running the app
 
