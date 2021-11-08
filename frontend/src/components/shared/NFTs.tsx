@@ -33,9 +33,7 @@ const NFTsView: FC<{}> = () => {
 
   const values = useMemo(() => {
     return flatten(
-      Object.entries(filters).map(([filter, values]) =>
-        values.map((value) => ({ value, filter }))
-      )
+      Object.entries(filters).map(([filter, value]) => ({ value, filter }))
     );
   }, [filters]);
 

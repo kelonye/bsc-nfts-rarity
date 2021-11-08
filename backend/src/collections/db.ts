@@ -9,16 +9,16 @@ export async function all() {
 export async function one(
   slug: string,
   page: number,
-  filters: Record<string, string[]>
+  filters: Record<string, string>
 ) {
   // console.log('slug', slug);
   if (!(slug in COLLECTIONS)) throw error(404);
 
   const traitTypes: string[] = [];
-  let values: string[] = [];
-  Object.entries(filters).forEach(([filter, v]) => {
-    traitTypes.push(filter);
-    values = values.concat(v);
+  const values: string[] = [];
+  Object.entries(filters).forEach(([traitType, value]) => {
+    traitTypes.push(traitType);
+    values.push(value);
   });
   // console.log(traitTypes, values);
   const query = !(traitTypes.length && values.length)

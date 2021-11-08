@@ -37,7 +37,7 @@ const CollectionsContext = createContext<{
   activeCollection: Collection | null;
   addFilter: (t: string, v: string) => void;
   removeFilter: (t: string, v: string) => void;
-  filters: Record<string, string[]>;
+  filters: Record<string, string>;
   setCollection: (collection: string) => void;
 } | null>(null);
 
@@ -70,13 +70,12 @@ export const CollectionsProvider: FC<{ children: ReactNode }> = ({
   }, [query]);
 
   const filters = useMemo(() => {
-    const filters: Record<string, string[]> = {};
+    const filters: Record<string, string> = {};
     if (!activeCollection) return filters;
 
     Object.keys(activeCollection.traits).forEach((traitType) => {
-      const values = query.getAll(traitType);
-      if (values.length) {
-        filters[traitType] = values;
+      if (query.has(traitType)) {
+        filters[traitType] = query.get(traitType)!;
       }
     });
     return filters;
@@ -98,20 +97,14 @@ export const CollectionsProvider: FC<{ children: ReactNode }> = ({
 
   const addFilter = (trait: string, value: string) => {
     const qs = new URLSearchParams(location.search.replace(/\?/, ''));
-    if (!~qs.getAll(trait).indexOf(value)) {
-      qs.append(trait, value);
-    }
+    qs.set(trait, value);
     history.push(`/${activeCollectionSlug}?${qs.toString()}`);
   };
 
   const removeFilter = (trait: string, value: string) => {
     const qs = new URLSearchParams(location.search.replace(/\?/, ''));
-    const values = qs.getAll(trait);
-    if (~values.indexOf(value)) {
+    if (~qs.has(trait)) {
       qs.delete(trait);
-      values.forEach((v) => {
-        if (v !== value) qs.append(trait, v);
-      });
     }
     history.push(`/${activeCollectionSlug}?${qs.toString()}`);
   };
