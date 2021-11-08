@@ -8,7 +8,7 @@
 
 NFT collection analytics and appraisals on BSC.
 
-Project link: https://rare-bsc-nfts.com
+Project link: https://bsc-rarity.com
 
 <!-- ### Video demo
 
