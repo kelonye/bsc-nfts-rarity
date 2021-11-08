@@ -24,8 +24,8 @@ export async function one(
   const query = !(traitTypes.length && values.length)
     ? {}
     : {
-        'attributes.traitType': { $in: traitTypes },
-        'attributes.value': { $in: values },
+        'attributes.traitType': { $all: traitTypes },
+        'attributes.value': { $all: values },
       };
 
   const { count } = COLLECTIONS[slug];

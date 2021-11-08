@@ -10,12 +10,14 @@ import { BORDER_RADIUS } from 'config';
 import clsx from 'clsx';
 
 const useStyles = makeStyles((theme) => ({
-  filters: {},
+  filters: {
+    minHeight: 32,
+  },
   nfts: {
     display: 'grid',
     gridTemplateColumns: 'repeat(9, 1fr)',
-    maxHeight: 800,
-    overflowY: 'auto',
+    // maxHeight: 800,
+    // overflowY: 'auto',
   },
   img: {
     borderRadius: BORDER_RADIUS,

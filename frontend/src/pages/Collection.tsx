@@ -4,7 +4,7 @@ import Box from '@material-ui/core/Box';
 import Paper from '@material-ui/core/Paper';
 
 import CollectionsChangeInput from 'components/shared/CollectionsChangeInput';
-import CollectionSearchInput from 'components/shared/CollectionSearchInput';
+// import CollectionSearchInput from 'components/shared/CollectionSearchInput';
 import NFTs from 'components/shared/NFTs';
 import { useCollections } from 'contexts/collections';
 import clsx from 'clsx';
@@ -16,6 +16,7 @@ const useStyles = makeStyles((theme) => {
       display: 'flex',
     },
     sidebar: {
+      marginTop: 32 + 14,
       width: 400,
       padding: '10px 15px',
       display: 'flex',
