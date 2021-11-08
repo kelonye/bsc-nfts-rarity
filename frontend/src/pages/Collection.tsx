@@ -41,7 +41,7 @@ const useStyles = makeStyles((theme) => {
   };
 });
 
-const WalletOverview: FC<{}> = () => {
+const CollectionOverview: FC<{}> = () => {
   const classes = useStyles();
   const { activeCollection, addFilter } = useCollections();
   const [expandedTrait, setExpandedTrait] = useState<string | null>(null);
@@ -102,4 +102,4 @@ const WalletOverview: FC<{}> = () => {
   );
 };
 
-export default WalletOverview;
+export default CollectionOverview;

@@ -1,4 +1,3 @@
-import { clone } from 'lodash';
 import {
   FC,
   ReactNode,
@@ -7,7 +6,9 @@ import {
   useState,
   useEffect,
   useMemo,
+  useCallback,
 } from 'react';
+import { useLocation, useHistory } from 'react-router';
 import * as request from 'utils/request';
 
 export type Collection = {
@@ -20,11 +21,12 @@ export type Collection = {
 export type NFT = {
   index: number;
   image: string;
+  attributes: Record<string, string>[];
+  missingTraits: Record<string, string>[];
 };
 
 const CollectionsContext = createContext<{
   collections: Collection[];
-  setCollection: (s: string) => void;
   searchTerm: string | null;
   setSearchTerm: (s: string | null) => void;
   nfts: NFT[];
@@ -36,62 +38,99 @@ const CollectionsContext = createContext<{
   addFilter: (t: string, v: string) => void;
   removeFilter: (t: string, v: string) => void;
   filters: Record<string, string[]>;
+  setCollection: (collection: string) => void;
 } | null>(null);
 
 export const CollectionsProvider: FC<{ children: ReactNode }> = ({
   children,
 }) => {
   const [collections, setCollections] = useState<Collection[]>([]);
-  const [activeCollectionSlug, setCollection] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState<string | null>(null);
   const [nfts, setNFTs] = useState<NFT[]>([]);
   const [pages, setPages] = useState<number>(0);
-  const [page, setPage] = useState<number>(1);
-  const [filters, setFilters] = useState<Record<string, string[]>>({});
+
+  const history = useHistory();
+  const location = useLocation();
+  const query = useMemo(
+    () => new URLSearchParams(location.search.replace(/\?/, '')),
+    [location.search]
+  );
+
+  const activeCollectionSlug = location.pathname.replace('/', '');
 
   const activeCollection = useMemo(
     () => collections.find((c) => c.slug === activeCollectionSlug) ?? null,
     [collections, activeCollectionSlug]
   );
 
-  const addFilter = (trait: string, value: string) => {
-    setFilters((f) => {
-      const filters = clone(f);
-      let values = filters[trait] ?? [];
-      const idx = values.indexOf(value);
-      if (!~idx) {
-        values.push(value);
+  const page = useMemo(() => {
+    const p = query.get('page');
+    if (!p) return 1;
+    return parseInt(p) ?? 1;
+  }, [query]);
+
+  const filters = useMemo(() => {
+    const filters: Record<string, string[]> = {};
+    if (!activeCollection) return filters;
+
+    Object.keys(activeCollection.traits).forEach((traitType) => {
+      const values = query.getAll(traitType);
+      if (values.length) {
+        filters[traitType] = values;
       }
-      filters[trait] = values;
-      return filters;
     });
+    return filters;
+  }, [query, activeCollection]);
+
+  const setCollection = useCallback(
+    (collection: string) => {
+      history.push(`/${collection}?page=1`);
+    },
+    [history]
+  );
+
+  const setPage = useCallback(
+    (page: number) => {
+      history.push(`/${activeCollectionSlug}?page=${page}`);
+    },
+    [history, activeCollectionSlug]
+  );
+
+  const addFilter = (trait: string, value: string) => {
+    const qs = new URLSearchParams(location.search.replace(/\?/, ''));
+    if (!~qs.getAll(trait).indexOf(value)) {
+      qs.append(trait, value);
+    }
+    history.push(`/${activeCollectionSlug}?${qs.toString()}`);
   };
 
   const removeFilter = (trait: string, value: string) => {
-    setFilters((f) => {
-      const filters = clone(f);
-      let values = filters[trait] ?? [];
-      const idx = values.indexOf(value);
-      if (~idx) {
-        values.splice(idx, 1);
-      }
-      filters[trait] = values;
-      return filters;
-    });
+    const qs = new URLSearchParams(location.search.replace(/\?/, ''));
+    const values = qs.getAll(trait);
+    if (~values.indexOf(value)) {
+      qs.delete(trait);
+      values.forEach((v) => {
+        if (v !== value) qs.append(trait, v);
+      });
+    }
+    history.push(`/${activeCollectionSlug}?${qs.toString()}`);
   };
 
   useEffect(() => {
     const load = async () => {
       const collections = await request.api('/collections');
       setCollections(collections);
-      setCollection(collections[0].slug);
     };
     load();
-  }, []);
+  }, [setCollection]);
+
+  useEffect(() => {
+    if (collections.length && !activeCollectionSlug)
+      setCollection(collections[0].slug);
+  }, [collections, activeCollectionSlug, setCollection]);
 
   useEffect(() => {
     if (!(activeCollectionSlug && page)) return;
-
     const load = async () => {
       const { nfts, pages } = await request.api(
         `/collections/${activeCollectionSlug}`,

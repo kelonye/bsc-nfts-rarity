@@ -1,6 +1,7 @@
 import { FC } from 'react';
 import { ThemeProvider } from '@material-ui/core/styles';
 import { CssBaseline } from '@material-ui/core';
+import { BrowserRouter as Router } from 'react-router-dom';
 
 import { UIProvider } from 'contexts/ui';
 import { CollectionsProvider } from 'contexts/collections';
@@ -13,11 +14,13 @@ const App: FC = () => {
   return (
     <ThemeProvider {...{ theme }}>
       <CssBaseline />
-      <UIProvider>
-        <CollectionsProvider>
-          <Layout />
-        </CollectionsProvider>
-      </UIProvider>
+      <Router>
+        <UIProvider>
+          <CollectionsProvider>
+            <Layout />
+          </CollectionsProvider>
+        </UIProvider>
+      </Router>
     </ThemeProvider>
   );
 };

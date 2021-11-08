@@ -1,4 +1,4 @@
-import { FC, useMemo } from 'react';
+import { FC, useMemo, useState } from 'react';
 import { makeStyles } from '@material-ui/core/styles';
 import Box from '@material-ui/core/Box';
 import Pagination from '@material-ui/lab/Pagination';
@@ -6,6 +6,7 @@ import Chip from '@material-ui/core/Chip';
 import flatten from 'lodash/flatten';
 
 import { NFT, useCollections } from 'contexts/collections';
+import NFTModal from 'components/shared/NFT';
 import { BORDER_RADIUS } from 'config';
 import clsx from 'clsx';
 
@@ -28,6 +29,7 @@ const NFTsView: FC<{}> = () => {
   const classes = useStyles();
   const { nfts, setPage, pages, page, filters, removeFilter } =
     useCollections();
+  const [nftBeingViewed, setNFTBeingViewed] = useState<NFT | null>(null);
 
   const values = useMemo(() => {
     return flatten(
@@ -49,7 +51,11 @@ const NFTsView: FC<{}> = () => {
 
       <Box className={classes.nfts}>
         {nfts.map((nft) => (
-          <NFTView key={nft.index} {...{ nft }} />
+          <NFTView
+            key={nft.index}
+            {...{ nft }}
+            onClick={() => setNFTBeingViewed(nft)}
+          />
         ))}
       </Box>
 
@@ -64,14 +70,24 @@ const NFTsView: FC<{}> = () => {
           />
         )}
       </Box>
+
+      {!nftBeingViewed ? null : (
+        <NFTModal
+          nft={nftBeingViewed}
+          onClose={() => setNFTBeingViewed(null)}
+        />
+      )}
     </Box>
   );
 };
 
-const NFTView: FC<{ nft: NFT }> = ({ nft }) => {
+const NFTView: FC<{ nft: NFT; onClick: () => void }> = ({ nft, onClick }) => {
   const classes = useStyles();
   return (
-    <Box className='flex flex-col flex-grow items-center'>
+    <Box
+      className='flex flex-col flex-grow items-center cursor-pointer'
+      {...{ onClick }}
+    >
       <img
         src={nft.image}
         alt={nft.index.toString()}

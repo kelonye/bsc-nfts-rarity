@@ -20,7 +20,7 @@ export async function one(
     traitTypes.push(filter);
     values = values.concat(v);
   });
-
+  // console.log(traitTypes, values);
   const query = !(traitTypes.length && values.length)
     ? {}
     : {
