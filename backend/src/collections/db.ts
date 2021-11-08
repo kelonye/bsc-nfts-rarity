@@ -1,10 +1,23 @@
 import * as redis from '../utils/redis';
 import error from '../utils/error';
 import { PAGE, COLLECTIONS } from '../config';
-import { getRedisNFTKey, getRedisSortedNFTsKey } from '../nfts/utils';
+import {
+  getRedisNFTKey,
+  getRedisSortedNFTsKey,
+  getRedisTraitsKey,
+} from '../nfts/utils';
 
 export async function all() {
-  return Object.entries(COLLECTIONS).map(([slug, c]) => ({ ...c, slug }));
+  const traits = await Promise.all(
+    Object.keys(COLLECTIONS).map((slug) =>
+      redis.exec('get', [getRedisTraitsKey(slug)])
+    )
+  );
+  return Object.entries(COLLECTIONS).map(([slug, c], i) => ({
+    ...c,
+    slug,
+    traits: JSON.parse(traits[i]),
+  }));
 }
 
 export async function one(slug: string, page: number) {

@@ -2,7 +2,11 @@ import orderBy from 'lodash/orderBy';
 
 import { COLLECTIONS } from '../config';
 import * as redis from '../utils/redis';
-import { getRedisNFTKey, getRedisSortedNFTsKey } from '../nfts/utils';
+import {
+  getRedisNFTKey,
+  getRedisSortedNFTsKey,
+  getRedisTraitsKey,
+} from '../nfts/utils';
 
 type RawNFT = {
   id: number;
@@ -56,12 +60,14 @@ async function main(slug: string) {
     })
     .filter((n) => !!n?.attributes);
 
-  const sortedNFTs = await rateNFTs(nfts);
+  const { sortedNFTs, allTraits } = await rateNFTs(nfts);
 
   for (let k = 0; k < sortedNFTs.length; k++) {
     const nft = sortedNFTs[k];
     await redis.exec('zadd', [getRedisSortedNFTsKey(slug), k + 1, nft.id]);
   }
+
+  await redis.exec('set', [getRedisTraitsKey(slug), JSON.stringify(allTraits)]);
 }
 
 async function rateNFTs(punks: RawNFT[]) {
@@ -166,7 +172,7 @@ async function rateNFTs(punks: RawNFT[]) {
 
   sortedNFTs = orderBy(sortedNFTs, 'rarityScore', 'desc');
 
-  return sortedNFTs;
+  return { sortedNFTs, allTraits };
 }
 
 export default main;

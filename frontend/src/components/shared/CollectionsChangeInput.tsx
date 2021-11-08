@@ -13,9 +13,9 @@ const useStyles = makeStyles((theme) => ({
 
 const CollectionsChangeInput: FC<{}> = () => {
   const classes = useStyles();
-  const { setCollection, collection, collections } = useCollections();
+  const { setCollection, activeCollectionSlug, collections } = useCollections();
 
-  return !collection ? null : (
+  return !activeCollectionSlug ? null : (
     <FormControl className={classes.container} fullWidth>
       <InputLabel id='collections-change-label' shrink>
         Collection
@@ -23,7 +23,7 @@ const CollectionsChangeInput: FC<{}> = () => {
       <Select
         labelId='collections-change-label'
         id='collections-change-select'
-        value={collection}
+        value={activeCollectionSlug}
         fullWidth
         onChange={(event: any) => setCollection(event.target.value as string)}
       >

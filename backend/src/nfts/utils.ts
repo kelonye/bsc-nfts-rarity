@@ -7,3 +7,7 @@ export function getRedisNFTKey(slug: string, i: number) {
 export function getRedisSortedNFTsKey(slug: string) {
   return redis.prefix([slug, 'sorted-nfts']);
 }
+
+export function getRedisTraitsKey(slug: string) {
+  return redis.prefix([slug, 'traits']);
+}

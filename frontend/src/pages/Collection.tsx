@@ -6,6 +6,7 @@ import Paper from '@material-ui/core/Paper';
 import CollectionsChangeInput from 'components/shared/CollectionsChangeInput';
 import CollectionSearchInput from 'components/shared/CollectionSearchInput';
 import NFTs from 'components/shared/NFTs';
+import { useCollections } from 'contexts/collections';
 
 const useStyles = makeStyles((theme) => {
   return {
@@ -28,6 +29,7 @@ const useStyles = makeStyles((theme) => {
 
 const WalletOverview: FC<{}> = () => {
   const classes = useStyles();
+  const { activeCollection } = useCollections();
 
   return (
     <Box className={classes.container}>
@@ -35,7 +37,27 @@ const WalletOverview: FC<{}> = () => {
         <Box mb={3}>
           <CollectionsChangeInput />
         </Box>
-        <CollectionSearchInput />
+        <Box mb={3}>
+          <CollectionSearchInput />
+        </Box>
+        <Box>
+          {!activeCollection ? null : (
+            <Box className='flex flex-col'>
+              {Object.entries(activeCollection.traits).map(
+                ([trait, values]) => (
+                  <Box key={trait} className='flex flex-col'>
+                    <Box>{trait}</Box>
+                    {Object.entries(values).map(([value, n]) => (
+                      <Box key={value} ml={2}>
+                        {value} ({n})
+                      </Box>
+                    ))}
+                  </Box>
+                )
+              )}
+            </Box>
+          )}
+        </Box>
       </Paper>
 
       <Box className={classes.nfts} ml={1}>

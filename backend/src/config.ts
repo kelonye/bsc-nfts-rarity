@@ -9,7 +9,7 @@ export const PRODUCTION = NODE_ENV === 'production';
 export const COLLECTIONS = {
   'cyber-bearz-army': {
     name: 'Cyber Bearz Army',
-    count: 4096,
+    count: 2048, // 4096,
     url: (i: number) =>
       `https://blackrainbow.mypinata.cloud/ipfs/QmaXVYEQEMMykH5zkwUYxhe836gKgmA2vRVV5cYQouKkAr/2/${i}/index.json`,
   },
