@@ -11,10 +11,10 @@ const useStyles = makeStyles((theme) => ({
   container: {
     width: '1200px',
     margin: '0 auto',
-    padding: '100px 0 30px',
+    padding: '20px 0 30px',
     position: 'relative',
     [theme.breakpoints.down('sm')]: {
-      padding: '70px 0 10px',
+      padding: '20px 0 10px',
       width: 'auto',
     },
     '& a': {
